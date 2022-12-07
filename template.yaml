@@ -16,7 +16,7 @@ Resources:
       EphemeralStorage: 
         Size: 512
 
-SageMakerModel:
+  SageMakerModel:
     Type: "AWS::SageMaker::Model"
     Properties:
       ModelName: "sms-spam-classifier-mxnet-2022-12-04-19-08-20-432"
@@ -34,6 +34,34 @@ SageMakerModel:
     Type: "AWS::SES::ReceiptRuleSet"
     Properties:
       RuleSetName: "6998-hw3-emails"
+
+  S3Bucket:
+    Type: "AWS::S3::Bucket"
+    Properties:
+      BucketName: "6998-hw3-emails"
+      NotificationConfiguration: 
+        LambdaConfigurations: 
+        - 
+          Event: "s3:ObjectCreated:*"
+          Function: !GetAtt LambdaFunction.Arn
+
+  S3BucketPolicy:
+    Type: "AWS::S3::BucketPolicy"
+    Properties:
+      Bucket: !Ref S3Bucket
+      PolicyDocument: 
+        Version: "2012-10-17"
+        Statement: 
+        - 
+          Sid: "AllowSESPuts"
+          Effect: "Allow"
+          Principal: 
+            Service: "ses.amazonaws.com"
+          Action: "s3:PutObject"
+          Resource: !Sub "arn:aws:s3:::${S3Bucket}/*"
+          Condition: 
+            StringEquals: 
+              "aws:Referer": !Ref AWS::AccountId
 
   IAMRole:
     Type: "AWS::IAM::Role"
