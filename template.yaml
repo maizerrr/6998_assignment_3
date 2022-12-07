@@ -11,5 +11,52 @@ Resources:
       MemorySize: 128
       Runtime: "python3.8"
       Timeout: 10
+      Layers: 
+      - !Sub "arn:aws:lambda:${AWS::Region}:668099181075:layer:AWSLambda-Python38-SciPy1x:107"
       EphemeralStorage: 
         Size: 512
+
+SageMakerModel:
+    Type: "AWS::SageMaker::Model"
+    Properties:
+      ModelName: "sms-spam-classifier-mxnet-2022-12-04-19-08-20-432"
+      PrimaryContainer: 
+        Environment: 
+          SAGEMAKER_CONTAINER_LOG_LEVEL: "20"
+          SAGEMAKER_PROGRAM: "sms_spam_classifier_mxnet_script.py"
+          SAGEMAKER_REGION: !Ref AWS::Region
+          SAGEMAKER_SUBMIT_DIRECTORY: "s3://smlambda-workshop-dl/sms-spam-classifier/code/sms-spam-classifier-mxnet-2022-12-04-19-04-32-886/source/sourcedir.tar.gz"
+        ModelDataUrl: "s3://smlambda-workshop-dl/sms-spam-classifier/output/sms-spam-classifier-mxnet-2022-12-04-19-04-32-886/output/model.tar.gz"
+        Image: !Sub "520713654638.dkr.ecr.${AWS::Region}.amazonaws.com/sagemaker-mxnet:1.2-cpu-py3"
+      ExecutionRoleArn: !GetAtt IAMRole2.Arn
+
+  SESReceiptRuleSet:
+    Type: "AWS::SES::ReceiptRuleSet"
+    Properties:
+      RuleSetName: "6998-hw3-emails"
+
+  IAMRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      Path: "/"
+      RoleName: "w6998-hw3-CFStack-LambdaFunctionRole-1249WZ7W4REX0"
+      AssumeRolePolicyDocument: "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Principal\":{\"Service\":\"lambda.amazonaws.com\"},\"Action\":\"sts:AssumeRole\"}]}"
+      MaxSessionDuration: 3600
+      ManagedPolicyArns: 
+      - "arn:aws:iam::aws:policy/AmazonSESFullAccess"
+      - "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+      - "arn:aws:iam::aws:policy/AmazonSageMakerFullAccess"
+      - "arn:aws:iam::aws:policy/AmazonS3FullAccess"
+      Description: ""
+
+  IAMRole2:
+    Type: "AWS::IAM::Role"
+    Properties:
+      Path: "/service-role/"
+      RoleName: "AmazonSageMaker-ExecutionRole-20221204T134859"
+      AssumeRolePolicyDocument: "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Principal\":{\"Service\":\"sagemaker.amazonaws.com\"},\"Action\":\"sts:AssumeRole\"}]}"
+      MaxSessionDuration: 3600
+      ManagedPolicyArns: 
+      - !Sub "arn:aws:iam::${AWS::AccountId}:policy/service-role/AmazonSageMaker-ExecutionPolicy-20221204T134859"
+      - "arn:aws:iam::aws:policy/AmazonSageMakerFullAccess"
+      Description: "SageMaker execution role created from the SageMaker AWS Management Console."

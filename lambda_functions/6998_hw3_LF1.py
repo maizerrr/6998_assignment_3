@@ -11,6 +11,8 @@ from sms_spam_classifier_utilities import vectorize_sequences
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
 
+# CF update test 01
+
 
 def lambda_handler(event, context):
     
