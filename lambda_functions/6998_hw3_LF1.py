@@ -3,6 +3,8 @@ import boto3
 import logging
 import email
 
+from io import StringIO
+
 from sms_spam_classifier_utilities import one_hot_encode
 from sms_spam_classifier_utilities import vectorize_sequences
 
@@ -23,7 +25,7 @@ def lambda_handler(event, context):
         logger.error("Exception encountered when parsing event")
         return {
             'statusCode': 500,
-            'body': e
+            'body': str(e)
         }
 
     # retrieve and parse email file
@@ -41,22 +43,29 @@ def lambda_handler(event, context):
     
     # sagemaker
     client = boto3.client('sagemaker-runtime')
+    _msg = vectorize_sequences( one_hot_encode([msg], 9013), 9013 )
+    
+    io = StringIO()
+    json.dump(_msg.tolist(), io)
     
     try:
         response = client.invoke_endpoint(
             EndpointName='sms-spam-classifier-mxnet-2022-12-04-19-08-20-432',
-            Body=vectorize_sequences( one_hot_encode(msg, 9013), 9013 )
+            Body=bytes(io.getvalue(), 'utf-8')
         )
         response = response['Body'].read().decode()
+        response = json.loads( str(response) )
+        label = "ham" if response['predicted_label'] == [[0.0]] else "spam"
         logger.info("Response body from model endpoint: {}".format(response))
     except Exception as e:
         logger.error("Unable to parse model response")
         return {
             'statusCode': 500,
-            'body': e
+            'body': str(e),
+            'response': response
         }
         
-    
+
     # send responding email back to sender
     ses = boto3.client('ses')
     CHARSET = "UTF-8"
@@ -66,8 +75,8 @@ def lambda_handler(event, context):
     
     Here is a 240 character sample of the email body: {}
     
-    The email was categorized as {} with a {}% confidence.
-    """.format( t, file['subject'], msg[:240], 'N/A', 'N/A' )
+    The email was categorized as {} with a {:.5}% confidence.
+    """.format( t, file['subject'], msg[:240], label, response['predicted_probability'][0][0] * 100 )
     
     logger.info(content)
     
@@ -89,7 +98,6 @@ def lambda_handler(event, context):
             }
         }
     )
-
 
     return {
         'statusCode': 200,
