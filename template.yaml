@@ -41,6 +41,7 @@ Resources:
       Handler: "6998_hw3_LF1.lambda_handler"
       CodeUri: "./lambda_functions"
       MemorySize: 128
+      Role: !GetAtt IAMRole.Arn
       Runtime: "python3.8"
       Timeout: 10
       Layers: 
