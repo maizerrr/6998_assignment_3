@@ -3,9 +3,9 @@ Metadata:
   Generator: "former2"
 Description: ""
 Transform: 'AWS::Serverless-2016-10-31'
-Parameters:
-  SageMakerEndpointParameter:
-    Type: "String"
+# Parameters:
+#   SageMakerEndpointParameter:
+#     Type: "String"
 Resources:
   LambdaFunction:
     # Type: "AWS::Lambda::Function"
