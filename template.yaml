@@ -1,7 +1,39 @@
 AWSTemplateFormatVersion: "2010-09-09"
+Metadata:
+  Generator: "former2"
+Description: ""
 Transform: 'AWS::Serverless-2016-10-31'
+Parameters:
+  SageMakerEndpointParameter:
+    Type: "String"
 Resources:
   LambdaFunction:
+    # Type: "AWS::Lambda::Function"
+    # DeletionPolicy: "Retain"
+    # Properties:
+    #   Description: ""
+    #   FunctionName: "6998_hw3_LF1"
+    #   Handler: "6998_hw3_LF1.lambda_handler"
+    #   Architectures: 
+    #   - "x86_64"
+    #   Code: 
+    #     S3Bucket: "prod-iad-c1-djusa-tasks"
+    #     S3Key: !Sub "/snapshots/${AWS::AccountId}/6998_hw3_LF1-af72453f-ca92-4a6f-a25e-28324a92d6fe"
+    #     S3ObjectVersion: "Rmq1tT388YyEnlLgrCkMuNMiyxmih6jY"
+    #   MemorySize: 128
+    #   Role: !GetAtt IAMRole.Arn
+    #   Runtime: "python3.8"
+    #   Timeout: 10
+    #   TracingConfig: 
+    #     Mode: "PassThrough"
+    #   Layers: 
+    #   - !Sub "arn:aws:lambda:${AWS::Region}:668099181075:layer:AWSLambda-Python38-SciPy1x:107"
+    #   EphemeralStorage: 
+    #     Size: 512
+    #   Tags: 
+    #   - 
+    #     Key: "lambda:createdBy"
+    #     Value: "SAM"
     Type: "AWS::Serverless::Function"
     DeletionPolicy: "Retain"
     Properties:
@@ -16,27 +48,9 @@ Resources:
       EphemeralStorage: 
         Size: 512
 
-  SageMakerModel:
-    Type: "AWS::SageMaker::Model"
-    Properties:
-      ModelName: "sms-spam-classifier-mxnet-2022-12-04-19-08-20-432"
-      PrimaryContainer: 
-        Environment: 
-          SAGEMAKER_CONTAINER_LOG_LEVEL: "20"
-          SAGEMAKER_PROGRAM: "sms_spam_classifier_mxnet_script.py"
-          SAGEMAKER_REGION: !Ref AWS::Region
-          SAGEMAKER_SUBMIT_DIRECTORY: "s3://smlambda-workshop-dl/sms-spam-classifier/code/sms-spam-classifier-mxnet-2022-12-04-19-04-32-886/source/sourcedir.tar.gz"
-        ModelDataUrl: "s3://smlambda-workshop-dl/sms-spam-classifier/output/sms-spam-classifier-mxnet-2022-12-04-19-04-32-886/output/model.tar.gz"
-        Image: !Sub "520713654638.dkr.ecr.${AWS::Region}.amazonaws.com/sagemaker-mxnet:1.2-cpu-py3"
-      ExecutionRoleArn: !GetAtt IAMRole2.Arn
-
-  SESReceiptRuleSet:
-    Type: "AWS::SES::ReceiptRuleSet"
-    Properties:
-      RuleSetName: "6998-hw3-emails"
-
   S3Bucket:
     Type: "AWS::S3::Bucket"
+    DeletionPolicy: "Retain"
     Properties:
       BucketName: "6998-hw3-emails"
       NotificationConfiguration: 
@@ -45,26 +59,15 @@ Resources:
           Event: "s3:ObjectCreated:*"
           Function: !GetAtt LambdaFunction.Arn
 
-  S3BucketPolicy:
-    Type: "AWS::S3::BucketPolicy"
-    Properties:
-      Bucket: !Ref S3Bucket
-      PolicyDocument: 
-        Version: "2012-10-17"
-        Statement: 
-        - 
-          Sid: "AllowSESPuts"
-          Effect: "Allow"
-          Principal: 
-            Service: "ses.amazonaws.com"
-          Action: "s3:PutObject"
-          Resource: !Sub "arn:aws:s3:::${S3Bucket}/*"
-          Condition: 
-            StringEquals: 
-              "aws:Referer": !Ref AWS::AccountId
+  # SageMakerEndpoint:
+  #   Type: "AWS::SageMaker::Endpoint"
+  #   Properties:
+  #     EndpointName: !Ref SageMakerEndpointParameter
+
 
   IAMRole:
     Type: "AWS::IAM::Role"
+    DeletionPolicy: "Retain"
     Properties:
       Path: "/"
       RoleName: "w6998-hw3-CFStack-LambdaFunctionRole-1249WZ7W4REX0"
@@ -79,6 +82,7 @@ Resources:
 
   IAMRole2:
     Type: "AWS::IAM::Role"
+    DeletionPolicy: "Retain"
     Properties:
       Path: "/service-role/"
       RoleName: "AmazonSageMaker-ExecutionRole-20221204T134859"
